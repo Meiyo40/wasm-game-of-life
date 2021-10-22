@@ -27,6 +27,15 @@ pub enum Cell {
     Alive = 1,
 }
 
+impl Cell {
+    fn toggle(&mut self) {
+        *self = match *self {
+            Cell::Dead => Cell::Alive,
+            Cell::Alive => Cell::Dead,
+        };
+    }
+}
+
 #[wasm_bindgen]
 pub struct Universe {
     width: u32,
@@ -34,6 +43,7 @@ pub struct Universe {
     cells: Vec<Cell>,
 }
 
+//METHOD EXPORTED TO JAVASCRIPT
 #[wasm_bindgen]
 impl Universe {
     fn get_index(&self, row: u32, column: u32) -> usize {
@@ -60,8 +70,10 @@ impl Universe {
     }
 
     pub fn new() -> Universe {
-        let width = 96;
-        let height = 64;
+        utils::set_panic_hook();
+
+        let width = 256;
+        let height = 128;
 
         let cells = (0..width * height)
             .map(|i| {
@@ -114,8 +126,92 @@ impl Universe {
         self.height
     }
 
+    pub fn set_width(&mut self, width: u32) {
+        self.width = width;
+        self.cells = (0..width * self.height).map(|_i| Cell::Dead).collect();
+    }
+
+    pub fn set_height(&mut self, height: u32) {
+        self.height = height;
+        self.cells = (0..self.width * height).map(|_i| Cell::Dead).collect();
+    }
+
     pub fn cells(&self) -> *const Cell {
         self.cells.as_ptr()
+    }
+
+    pub fn toggle_cell(&mut self, row: u32, col: u32) {
+        let idx = self.get_index(row, col);
+        self.cells[idx].toggle();
+    }
+
+    pub fn create_lightship(&mut self, row: u32, col: u32) {
+        //Idx is the center of the ship
+        //PATTERN Dead/Alive
+        //DADDA
+        //ADDDD
+        //ADDDA
+        //AAAAD
+
+        //HARDCODED TO SEE THE SCHEME
+
+        //L1
+        let idx = self.get_index(row - 1, col - 2);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row - 1, col - 1);
+        self.cells[idx] = Cell::Alive;
+        let idx = self.get_index(row - 1, col);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row - 1, col + 1);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row - 1, col + 2);
+        self.cells[idx] = Cell::Alive;
+        //L2
+        let idx = self.get_index(row, col - 2);
+        self.cells[idx] = Cell::Alive;
+        let idx = self.get_index(row, col - 1);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row, col);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row, col + 1);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row, col + 2);
+        self.cells[idx] = Cell::Dead;
+        //L3
+        let idx = self.get_index(row + 1, col - 2);
+        self.cells[idx] = Cell::Alive;
+        let idx = self.get_index(row + 1, col - 1);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row + 1, col);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row + 1, col + 1);
+        self.cells[idx] = Cell::Dead;
+        let idx = self.get_index(row + 1, col + 2);
+        self.cells[idx] = Cell::Alive;
+        //L4
+        let idx = self.get_index(row + 2, col - 2);
+        self.cells[idx] = Cell::Alive;
+        let idx = self.get_index(row + 2, col - 1);
+        self.cells[idx] = Cell::Alive;
+        let idx = self.get_index(row + 2, col);
+        self.cells[idx] = Cell::Alive;
+        let idx = self.get_index(row + 2, col + 1);
+        self.cells[idx] = Cell::Alive;
+        let idx = self.get_index(row + 2, col + 2);
+        self.cells[idx] = Cell::Dead;
+    }
+}
+
+impl Universe {
+    pub fn get_cells(&self) -> &[Cell] {
+        &self.cells
+    }
+
+    pub fn set_cells(&mut self, cells: &[(u32, u32)]) {
+        for (row, col) in cells.iter().cloned() {
+            let idx = self.get_index(row, col);
+            self.cells[idx] = Cell::Alive;
+        }
     }
 }
 
